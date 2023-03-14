@@ -1,0 +1,32 @@
+training:
+    batch_size: 2
+    checkpoint_epochs: 50
+    num_epochs: 150
+    optimizer_class: SGD
+    optimizer_kwargs: {
+        lr: 0.05,
+        weight_decay: 0.001
+    }
+    scheduler_class: StepLR
+    scheduler_kwargs: {
+        step_size: 50
+    }
+data:
+    metadata_path: '/Users/williamzhang/Data/coco2017/annotations/instances_val2017.json'
+    image_dir: '/Users/williamzhang/Data/coco2017/val2017'
+input:
+    "image_size": [256, 256]  # row, col
+target:
+    targ_res: [8, 8]  # row, col
+    anchors: [
+        [25, 25.0],
+        [50, 50.0],
+        [100, 100],
+        [200, 200]
+    ]
+    num_classes: 90
+backprop:
+    loss_class: 'DetectionFMCLoss'
+    loss_kwargs: {
+        'weight': [5, 2, 0]
+    }
