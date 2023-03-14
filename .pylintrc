@@ -1,0 +1,4 @@
+# Packages below set members dynamically.
+# This undesirably triggers E1101 when code accesses those members.
+[TYPE-CHECK]
+generated-members=numpy.*, torch.*

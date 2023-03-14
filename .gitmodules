@@ -1,0 +1,6 @@
+[submodule "coco-interface"]
+	path = coco-interface
+	url = git@github.com:william-zhang-ml/coco-interface.git
+[submodule "components"]
+	path = components
+	url = git@github.com:william-zhang-ml/components.git
