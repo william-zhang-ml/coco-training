@@ -25,6 +25,7 @@ class DetectionBMCLoss:
         # this var is needed to correctly average object-specific target vals
         num_obj = target[:, 0].sum(dim=[1, 2, 3])
         num_bg = target[0][0].numel() - num_obj
+        num_obj, num_bg = num_obj + 1e-9, num_bg + 1e-9
 
         # compute object detection / background rejection loss
         det_loss = self.det_criteria(pred[:, 0], target[:, 0])
