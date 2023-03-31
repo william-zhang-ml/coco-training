@@ -1,10 +1,14 @@
 training:
-    batch_size: 2
-    checkpoint_epochs: 50
-    num_epochs: 150
+    batch_size: 16
+    checkpoint_epochs: 5
+    num_epochs: 10
+    loss_class: 'DetectionFMCLoss'
+    loss_kwargs: {
+        'weight': [5, 2, 0]
+    }
     optimizer_class: SGD
     optimizer_kwargs: {
-        lr: 0.05,
+        lr: 0.0005,
         weight_decay: 0.001
     }
     scheduler_class: StepLR
@@ -25,8 +29,88 @@ target:
         [200, 200]
     ]
     num_classes: 90
-backprop:
-    loss_class: 'DetectionFMCLoss'
-    loss_kwargs: {
-        'weight': [5, 2, 0]
-    }
+arch:
+- module: nn
+  class: Conv2d
+  kwargs:
+    in_channels: 3
+    out_channels: 32
+    kernel_size: 3
+    stride: 1
+    padding: 1
+- module: blocks
+  class: ConvBlock
+  kwargs:
+    in_channels: 32
+    out_channels: 32
+    kernel_size: 3
+    stride: 1
+    padding: 1
+    groups: 8
+  repeat: 2
+- module: nn
+  class: MaxPool2d
+  kwargs:
+    kernel_size: 2
+    stride: 2
+- module: blocks
+  class: ConvBlock
+  kwargs:
+    in_channels: 32
+    out_channels: 64
+    kernel_size: 3
+    stride: 1
+    padding: 1
+    groups: 8
+- module: blocks
+  class: ConvBlock
+  kwargs:
+    in_channels: 64
+    out_channels: 64
+    kernel_size: 3
+    stride: 1
+    padding: 1
+    groups: 8
+- module: nn
+  class: MaxPool2d
+  kwargs:
+    kernel_size: 2
+    stride: 2
+- module: blocks
+  class: ConvBlock
+  kwargs:
+    in_channels: 64
+    out_channels: 96
+    kernel_size: 3
+    stride: 1
+    padding: 1
+    groups: 8
+- module: blocks
+  class: ConvBlock
+  kwargs:
+    in_channels: 96
+    out_channels: 96
+    kernel_size: 3
+    stride: 1
+    padding: 1
+    groups: 8
+- module: nn
+  class: MaxPool2d
+  kwargs:
+    kernel_size: 2
+    stride: 2
+- module: blocks
+  class: ConvBlock
+  kwargs:
+    in_channels: 96
+    out_channels: 96
+    kernel_size: 3
+    stride: 1
+    padding: 1
+    groups: 8
+- module: detectors
+  class: ConvDetector
+  kwargs:
+    in_channels: 96
+    num_classes: 90
+    num_anchors: 4

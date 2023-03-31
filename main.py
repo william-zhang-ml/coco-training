@@ -16,8 +16,7 @@ from torchvision import transforms
 from torchvision.ops import box_convert
 from tqdm import tqdm
 from coco import CocoInstances
-from components.blocks import ConvBlock
-from components.detectors import ConvDetector
+from components import blocks, detectors
 from modules import labels, losses, utils
 
 
@@ -154,6 +153,8 @@ def train(batches: torch.utils.data.DataLoader,
             regr_loss = regr_loss.mean()
             cls_loss = cls_loss.mean()
             total_loss = det_loss + regr_loss + cls_loss
+            if torch.isnan(total_loss):
+                sys.exit()
 
             # backprop
             optimizer.zero_grad()
@@ -168,7 +169,6 @@ def train(batches: torch.utils.data.DataLoader,
                 'cls_loss': f'{cls_loss.detach().cpu().item():.03f}',
                 'total_loss': f'{total_loss.detach().cpu().item():.03f}'
             })
-            break  # overfit to 1 batch for now
 
         # checkpointing
         if (i_epoch + 1) % CONFIG['checkpoint_epochs'] == 0:
@@ -222,22 +222,30 @@ if __name__ == '__main__':
         ),
         batch_size=CONFIG['batch_size'],
         collate_fn=collate,
-        shuffle=False  # overfit to 1 batch for now
+        shuffle=True
     )
 
+    # build model layer by layer (supports repeated layers)
+    my_model = []
+    for layer_config in CONFIG['arch']:
+        # layer factory -> layer initializer
+        if layer_config['module'] == 'nn':
+            layer_type = getattr(nn, layer_config['class'])
+        elif layer_config['module'] == 'blocks':
+            layer_type = getattr(blocks, layer_config['class'])
+        elif layer_config['module'] == 'detectors':
+            layer_type = getattr(detectors, layer_config['class'])
+        else:
+            raise ValueError('layer config asks for unsupported module')
+
+        # initialize layers
+        try:
+            num_repeats = layer_config['repeat']
+        except KeyError:
+            num_repeats = 1
+        for _ in range(num_repeats):
+            my_model.append(layer_type(**layer_config['kwargs']))
+    my_model = nn.Sequential(*my_model)
+
     # train model
-    my_model = nn.Sequential(
-        nn.Conv2d(3, 32, 3, 1, 1),
-        ConvBlock(32, 32, 3, 1, 1, groups=8),
-        ConvBlock(32, 32, 3, 1, 1, groups=8),
-        nn.MaxPool2d(2, 2),
-        ConvBlock(32, 64, 3, 1, 1, groups=8),
-        ConvBlock(64, 64, 3, 1, 1, groups=8),
-        nn.MaxPool2d(2, 2),
-        ConvBlock(64, 96, 3, 1, 1, groups=8),
-        ConvBlock(96, 96, 3, 1, 1, groups=8),
-        nn.MaxPool2d(2, 2),
-        ConvBlock(96, 96, 3, 1, 1, groups=8),
-        ConvDetector(96, 90, torch.tensor(CONFIG['anchors']))
-    )
     train(data_train, my_model)
